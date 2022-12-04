@@ -9,6 +9,7 @@ LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nl
 builder.Services.ConfigureCors();
 builder.Services.ConfigureIISIntergration();
 builder.Services.ConfigureLoggerService();
+builder.Services.ConfigureRepositoryManager();
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -24,7 +25,7 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseForwardedHeaders(new ForwardedHeadersOptions()
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.All
 });
@@ -49,7 +50,7 @@ app.Map("/usingmapbranch", builder =>
     });
     builder.Run(async context =>
     {
-        Console.WriteLine($"Map branch response to the client in the Run method");
+        Console.WriteLine("Map branch response to the client in the Run method");
         await context.Response.WriteAsync("Hello from the map branch.");
     });
 });
