@@ -17,6 +17,15 @@ builder.Services.ConfigureSqlContext(builder.Configuration);
 builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 
+builder.Services.AddControllers(config =>
+    {
+        config.RespectBrowserAcceptHeader = true;
+        config.ReturnHttpNotAcceptable = true;
+    })
+    .AddXmlDataContractSerializerFormatters()
+    .AddCustomCSVFormatter()
+    .AddApplicationPart(typeof(AssemblyReference).Assembly);
+
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(AssemblyReference).Assembly);
 
