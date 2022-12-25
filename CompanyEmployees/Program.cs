@@ -1,5 +1,6 @@
 using CompanyEmployees.Extensions;
 using CompanyEmployees.Presentation;
+using CompanyEmployees.Presentation.ActionFilters;
 using Contracts;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ builder.Services.ConfigureSqlContext(builder.Configuration);
 builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
+builder.Services.AddScoped<ValidationFilterAttribute>();
 builder.Services.AddControllers(config =>
     {
         config.RespectBrowserAcceptHeader = true;
