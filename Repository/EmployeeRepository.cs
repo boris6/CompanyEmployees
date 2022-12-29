@@ -17,8 +17,9 @@ internal sealed class EmployeeRepository : RepositoryBase<Employee>, IEmployeeRe
         bool trackChanges)
     {
         var employees = await FindByCondition(e => e.CompanyId.Equals(companyId), trackChanges)
-            .FilterEmployees(employeeParameters.MinAge, employeeParameters.MaxAge).Search(employeeParameters.SearchTerm)
-            .OrderBy(e => e.Name)
+            .FilterEmployees(employeeParameters.MinAge, employeeParameters.MaxAge)
+            .Search(employeeParameters.SearchTerm)
+            .Sort(employeeParameters.OrderBy)
             .Skip((employeeParameters.PageNumber - 1) * employeeParameters.PageSize)
             .Take(employeeParameters.PageSize)
             .ToListAsync();
