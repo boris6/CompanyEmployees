@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Dynamic;
+using AutoMapper;
 using Contracts;
 using Entities.Exceptions;
 using Entities.Models;
@@ -10,27 +11,18 @@ namespace Service;
 
 internal sealed class EmployeeService : IEmployeeService
 {
+    private readonly IDataShaper<EmployeeDto> _dataShaper;
     private readonly ILoggerManager _logger;
     private readonly IMapper _mapper;
     private readonly IRepositoryManager _repository;
 
-    public EmployeeService(IRepositoryManager repository, ILoggerManager logger, IMapper mapper)
+    public EmployeeService(IRepositoryManager repository, ILoggerManager logger, IMapper mapper,
+        IDataShaper<EmployeeDto> dataShaper)
     {
         _repository = repository;
         _logger = logger;
         _mapper = mapper;
-    }
-
-    public async Task<(IEnumerable<EmployeeDto> employees, MetaData metaData)> GetEmployeesAsync(Guid companyId,
-        EmployeeParameters employeeParameters, bool trackChanges)
-    {
-        if (!employeeParameters.ValidAgeRange) throw new MaxAgeRangeBadRequestException();
-        await CheckIfCompanyExists(companyId, trackChanges);
-
-        var employeesWithMetaData =
-            await _repository.Employee.GetEmployeesAsync(companyId, employeeParameters, trackChanges);
-        var employeesDto = _mapper.Map<IEnumerable<EmployeeDto>>(employeesWithMetaData);
-        return (employees: employeesDto, metaData: employeesWithMetaData.MetaData);
+        _dataShaper = dataShaper;
     }
 
     public async Task<EmployeeDto> GetEmployeeAsync(Guid companyId, Guid id, bool trackChanges)
@@ -96,6 +88,19 @@ internal sealed class EmployeeService : IEmployeeService
     {
         _mapper.Map(employeeToPatch, employeeEntity);
         await _repository.SaveAsync();
+    }
+
+    public async Task<(IEnumerable<ExpandoObject> employees, MetaData metaData)> GetEmployeesAsync(Guid companyId,
+        EmployeeParameters employeeParameters, bool trackChanges)
+    {
+        if (!employeeParameters.ValidAgeRange) throw new MaxAgeRangeBadRequestException();
+        await CheckIfCompanyExists(companyId, trackChanges);
+
+        var employeesWithMetaData =
+            await _repository.Employee.GetEmployeesAsync(companyId, employeeParameters, trackChanges);
+        var employeesDto = _mapper.Map<IEnumerable<EmployeeDto>>(employeesWithMetaData);
+        var shapedData = _dataShaper.ShapeData(employeesDto, employeeParameters.Fields);
+        return (employees: shapedData, metaData: employeesWithMetaData.MetaData);
     }
 
     private async Task CheckIfCompanyExists(Guid companyId, bool trackChanges)
