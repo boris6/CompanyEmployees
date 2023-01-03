@@ -30,6 +30,7 @@ builder.Services.ConfigureServiceManager();
 builder.Services.ConfigureSqlContext(builder.Configuration);
 builder.Services.ConfigureVersioning();
 builder.Services.ConfigureOutputCaching();
+builder.Services.ConfigureRateLimitingOptions();
 builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
@@ -69,6 +70,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.All
 });
+app.UseRateLimiter();
 app.UseCors("CorsPolicy");
 //app.UseResponseCaching();
 app.UseOutputCache();
