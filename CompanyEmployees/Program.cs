@@ -29,6 +29,7 @@ builder.Services.ConfigureRepositoryManager();
 builder.Services.ConfigureServiceManager();
 builder.Services.ConfigureSqlContext(builder.Configuration);
 builder.Services.ConfigureVersioning();
+builder.Services.ConfigureOutputCaching();
 builder.Services.AddAutoMapper(typeof(Program));
 // Add services to the container.
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
@@ -36,11 +37,13 @@ builder.Services.AddScoped<ValidationFilterAttribute>();
 builder.Services.AddScoped<IDataShaper<EmployeeDto>, DataShaper<EmployeeDto>>();
 builder.Services.AddScoped<ValidateMediaTypeAttribute>();
 builder.Services.AddScoped<IEmployeeLinks, EmployeeLinks>();
+builder.Services.ConfigureResponseCaching();
 builder.Services.AddControllers(config =>
     {
         config.RespectBrowserAcceptHeader = true;
         config.ReturnHttpNotAcceptable = true;
         config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
+        config.CacheProfiles.Add("120SecondsDuration", new CacheProfile { Duration = 120 });
     })
     .AddXmlDataContractSerializerFormatters()
     .AddCustomCSVFormatter()
@@ -67,6 +70,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.All
 });
 app.UseCors("CorsPolicy");
+//app.UseResponseCaching();
+app.UseOutputCache();
 
 app.UseAuthorization();
 
