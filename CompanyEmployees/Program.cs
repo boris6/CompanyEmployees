@@ -22,6 +22,8 @@ NewtonsoftJsonPatchInputFormatter GetJsonPatchInputFormatter()
         .InputFormatters.OfType<NewtonsoftJsonPatchInputFormatter>().First();
 }
 
+builder.Services.AddAuthentication();
+builder.Services.ConfigureIdentity();
 builder.Services.ConfigureCors();
 builder.Services.ConfigureIISIntergration();
 builder.Services.ConfigureLoggerService();
@@ -75,6 +77,7 @@ app.UseCors("CorsPolicy");
 //app.UseResponseCaching();
 app.UseOutputCache();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
