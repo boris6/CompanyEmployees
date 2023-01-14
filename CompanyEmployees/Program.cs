@@ -15,45 +15,40 @@ var builder = WebApplication.CreateBuilder(args);
 
 LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
 
-NewtonsoftJsonPatchInputFormatter GetJsonPatchInputFormatter()
-{
-    return new ServiceCollection().AddLogging().AddMvc()
-        .AddNewtonsoftJson().Services.BuildServiceProvider().GetRequiredService<IOptions<MvcOptions>>().Value
-        .InputFormatters.OfType<NewtonsoftJsonPatchInputFormatter>().First();
-}
-
-builder.Services.AddAuthentication();
-builder.Services.ConfigureIdentity();
 builder.Services.ConfigureCors();
-builder.Services.ConfigureIISIntergration();
+builder.Services.ConfigureIISIntegration();
 builder.Services.ConfigureLoggerService();
 builder.Services.ConfigureRepositoryManager();
 builder.Services.ConfigureServiceManager();
 builder.Services.ConfigureSqlContext(builder.Configuration);
+builder.Services.AddAutoMapper(typeof(Program));
+
+builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
+
+builder.Services.AddScoped<ValidationFilterAttribute>();
+builder.Services.AddScoped<ValidateMediaTypeAttribute>();
+
+builder.Services.AddScoped<IDataShaper<EmployeeDto>, DataShaper<EmployeeDto>>();
+builder.Services.AddScoped<IEmployeeLinks, EmployeeLinks>();
+
 builder.Services.ConfigureVersioning();
 builder.Services.ConfigureOutputCaching();
 builder.Services.ConfigureRateLimitingOptions();
-builder.Services.AddAutoMapper(typeof(Program));
-// Add services to the container.
-builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
-builder.Services.AddScoped<ValidationFilterAttribute>();
-builder.Services.AddScoped<IDataShaper<EmployeeDto>, DataShaper<EmployeeDto>>();
-builder.Services.AddScoped<ValidateMediaTypeAttribute>();
-builder.Services.AddScoped<IEmployeeLinks, EmployeeLinks>();
-builder.Services.ConfigureResponseCaching();
+
+builder.Services.AddAuthentication();
+builder.Services.ConfigureIdentity();
+builder.Services.ConfigureJWT(builder.Configuration);
+
 builder.Services.AddControllers(config =>
     {
         config.RespectBrowserAcceptHeader = true;
         config.ReturnHttpNotAcceptable = true;
         config.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
-        config.CacheProfiles.Add("120SecondsDuration", new CacheProfile { Duration = 120 });
-    })
-    .AddXmlDataContractSerializerFormatters()
+        //config.CacheProfiles.Add("120SecondsDuration", new CacheProfile { Duration = 120 });
+    }).AddXmlDataContractSerializerFormatters()
     .AddCustomCSVFormatter()
     .AddApplicationPart(typeof(AssemblyReference).Assembly);
 
-builder.Services.AddControllers()
-    .AddApplicationPart(typeof(AssemblyReference).Assembly);
 builder.Services.AddCustomMediaTypes();
 
 var app = builder.Build();
@@ -64,16 +59,16 @@ app.ConfigureExceptionHandler(logger);
 if (app.Environment.IsProduction())
     app.UseHsts();
 
-// Configure the HTTP request pipeline.
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.All
 });
+
 app.UseRateLimiter();
 app.UseCors("CorsPolicy");
+
 //app.UseResponseCaching();
 app.UseOutputCache();
 
@@ -83,3 +78,11 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+NewtonsoftJsonPatchInputFormatter GetJsonPatchInputFormatter()
+{
+    return new ServiceCollection().AddLogging().AddMvc().AddNewtonsoftJson()
+        .Services.BuildServiceProvider()
+        .GetRequiredService<IOptions<MvcOptions>>().Value.InputFormatters
+        .OfType<NewtonsoftJsonPatchInputFormatter>().First();
+}
